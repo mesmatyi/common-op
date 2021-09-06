@@ -1106,6 +1106,7 @@ public:
 	//Following
 	double 				distanceToNext;
 	double				velocityOfNext;
+  double        egoFollowingVelocity;
 	//-------------------------------------------//
 	//For Lane Change
 	int 				iPrevSafeLane;
@@ -1123,6 +1124,7 @@ public:
 	bool				bTargetLaneSafe;
 	//-------------------------------------------//
 	//Traffic Lights & Stop Sign
+  double      egoStoppingVelocity;
 	int 				currentStopSignID;
 	int 				prevStopSignID;
 	int 				currentTrafficLightID;
@@ -1177,6 +1179,8 @@ public:
 		//distance to stop
 		distanceToNext = -1;
 		velocityOfNext = 0;
+		egoFollowingVelocity = 0.0;
+		egoStoppingVelocity = 0.0;
 		currentStopSignID = -1;
 		prevStopSignID = -1;
 		currentTrafficLightID = -1;
