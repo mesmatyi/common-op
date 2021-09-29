@@ -61,7 +61,7 @@ private:
 	ros::Subscriber sub_nodes;
 
 	void callbackGetkmlMapFileName(const std_msgs::String& file_name);
-	void callbackGetLanelet2(const autoware_lanelet2_msgs::MapBin& msg);
+	void callbackGetLanelet2(autoware_lanelet2_msgs::MapBin msg);
 	void callbackGetVMLanes(const vector_map_msgs::LaneArray& msg);
 	void callbackGetVMPoints(const vector_map_msgs::PointArray& msg);
 	void callbackGetVMdtLanes(const vector_map_msgs::DTLaneArray& msg);

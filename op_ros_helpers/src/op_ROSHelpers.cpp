@@ -20,7 +20,6 @@ namespace PlannerHNS
 {
 
 ROSHelpers::ROSHelpers() {
-
 }
 
 ROSHelpers::~ROSHelpers() {
@@ -431,7 +430,7 @@ void ROSHelpers::InitCurbsMarkers(const int& nMarkers, visualization_msgs::Marke
 	}
 }
 
-void ROSHelpers::ConvertPredictedTrqajectoryMarkers(std::vector<std::vector<PlannerHNS::WayPoint> >& paths,visualization_msgs::MarkerArray& path_markers, visualization_msgs::MarkerArray& path_markers_d)
+void ROSHelpers::ConvertPredictedTrqajectoryMarkers(std::vector<std::vector<PlannerHNS::WayPoint> >& paths,visualization_msgs::MarkerArray& path_markers, visualization_msgs::MarkerArray& path_markers_d,double x_tf,double y_tf,std::string frame_id)
 {
 	path_markers = path_markers_d;
 	int iCount = 0;
@@ -491,11 +490,12 @@ void ROSHelpers::ConvertPredictedTrqajectoryMarkers(std::vector<std::vector<Plan
 		for(unsigned int p = 0; p < paths.at(i).size(); p++)
 		{
 			geometry_msgs::Point point;
-			point.x = paths.at(i).at(p).pos.x;
-			point.y = paths.at(i).at(p).pos.y;
+			point.x = paths.at(i).at(p).pos.x - x_tf;
+			point.y = paths.at(i).at(p).pos.y - y_tf;
 			point.z = paths.at(i).at(p).pos.z + additional_z;
 			path_mkr.points.push_back(point);
 		}
+		path_mkr.header.frame_id = frame_id;
 
 		if(iCount < path_markers.markers.size())
 			path_markers.markers.at(iCount) = path_mkr;
@@ -510,11 +510,12 @@ void ROSHelpers::ConvertPredictedTrqajectoryMarkers(std::vector<std::vector<Plan
 		for(unsigned int p = 0; p < paths.at(i).size(); p++)
 		{
 			geometry_msgs::Point point;
-			point.x = paths.at(i).at(p).pos.x;
-			point.y = paths.at(i).at(p).pos.y;
+			point.x = paths.at(i).at(p).pos.x - x_tf;
+			point.y = paths.at(i).at(p).pos.y - y_tf;
 			point.z = paths.at(i).at(p).pos.z + additional_z;
 
 			visualization_msgs::Marker circle_mkr = CreateGenMarker(point.x,point.y,point.z,0.4,r,g,b,0.5,iCount,"Predicted_Trajectories", visualization_msgs::Marker::CYLINDER);
+			circle_mkr.header.frame_id = frame_id;
 			if(iCount < path_markers.markers.size())
 				path_markers.markers.at(iCount) = circle_mkr;
 			else
@@ -528,14 +529,15 @@ void ROSHelpers::ConvertPredictedTrqajectoryMarkers(std::vector<std::vector<Plan
 		for(unsigned int p = 0; p < paths.at(i).size(); p++)
 		{
 			geometry_msgs::Point point;
-			point.x = paths.at(i).at(p).pos.x;
-			point.y = paths.at(i).at(p).pos.y + 0.5;
+			point.x = paths.at(i).at(p).pos.x - x_tf;
+			point.y = (paths.at(i).at(p).pos.y + 0.5) - y_tf;
 			point.z = paths.at(i).at(p).pos.z + additional_z + 0.01;
 			std::ostringstream str_out;
 			str_out.precision(3);
 			str_out << paths.at(i).at(p).timeCost;
 
 			visualization_msgs::Marker txt_mkr = CreateGenMarker(point.x,point.y,point.z,0.4,r,g,b,0.5,iCount,"Predicted_Trajectories", visualization_msgs::Marker::TEXT_VIEW_FACING);
+			txt_mkr.header.frame_id = frame_id;
 			txt_mkr.text = str_out.str();
 
 			if(iCount < path_markers.markers.size())
@@ -555,7 +557,7 @@ void ROSHelpers::ConvertPredictedTrqajectoryMarkers(std::vector<std::vector<Plan
 //	}
 }
 
-void ROSHelpers::ConvertCurbsMarkers(const std::vector<PlannerHNS::DetectedObject>& curbs, visualization_msgs::MarkerArray& curbs_markers, visualization_msgs::MarkerArray& curbs_markers_d)
+void ROSHelpers::ConvertCurbsMarkers(const std::vector<PlannerHNS::DetectedObject>& curbs, visualization_msgs::MarkerArray& curbs_markers, visualization_msgs::MarkerArray& curbs_markers_d,const std::string frame_id,const double x_tf,const double y_tf)
 {
 	curbs_markers = curbs_markers_d;
 	int iMarkerIndex = 0;
@@ -563,8 +565,9 @@ void ROSHelpers::ConvertCurbsMarkers(const std::vector<PlannerHNS::DetectedObjec
 	{
 		for(unsigned int j = 0; j < curbs.at(i).contour.size(); j++)
 		{
-			visualization_msgs::Marker curb_mkr = CreateGenMarker(curbs.at(i).contour.at(j).x,curbs.at(i).contour.at(j).y,curbs.at(i).contour.at(j).z,0,1,0.54,0,0.2,iMarkerIndex,"map_detected_curbs", visualization_msgs::Marker::SPHERE);
+			visualization_msgs::Marker curb_mkr = CreateGenMarker(curbs.at(i).contour.at(j).x - x_tf,curbs.at(i).contour.at(j).y - y_tf,curbs.at(i).contour.at(j).z,0,1,0.54,0,0.2,iMarkerIndex,"map_detected_curbs", visualization_msgs::Marker::SPHERE);
 
+			curb_mkr.header.frame_id = frame_id;
 			if(iMarkerIndex < curbs_markers.markers.size())
 				curbs_markers.markers.at(iMarkerIndex) = curb_mkr;
 			else
@@ -585,13 +588,13 @@ void ROSHelpers::InitCollisionPointsMarkers(const int& nMarkers, visualization_m
 	}
 }
 
-void ROSHelpers::ConvertCollisionPointsMarkers(const std::vector<PlannerHNS::WayPoint>& col_points, visualization_msgs::MarkerArray& collision_markers, visualization_msgs::MarkerArray& collision_markers_d)
+void ROSHelpers::ConvertCollisionPointsMarkers(const std::vector<PlannerHNS::WayPoint>& col_points, visualization_msgs::MarkerArray& collision_markers, visualization_msgs::MarkerArray& collision_markers_d,const std::string frame_id,const double x_tf,const double y_tf)
 {
 	collision_markers = collision_markers_d;
 	for(unsigned int i = 0; i < col_points.size(); i++)
 	{
-		visualization_msgs::Marker mkr = CreateGenMarker(col_points.at(i).pos.x, col_points.at(i).pos.y, col_points.at(i).pos.z,0,1,0,0,0.5,i,"collision_points_rviz", visualization_msgs::Marker::SPHERE);
-
+		visualization_msgs::Marker mkr = CreateGenMarker(col_points.at(i).pos.x - x_tf, col_points.at(i).pos.y - y_tf, col_points.at(i).pos.z,0,1,0,0,0.5,i,"collision_points_rviz", visualization_msgs::Marker::SPHERE);
+		mkr.header.frame_id = frame_id;
 		if(i < collision_markers.markers.size())
 			collision_markers.markers.at(i) = mkr;
 		else
@@ -624,10 +627,10 @@ void ROSHelpers::ConvertFromPlannerHToAutowarePathFormat(const std::vector<Plann
 	}
 }
 
-void ROSHelpers::ConvertFromRoadNetworkToAutowareVisualizeMapFormat(const PlannerHNS::RoadNetwork& map,	visualization_msgs::MarkerArray& markerArray, bool show_connections)
+void ROSHelpers::ConvertFromRoadNetworkToAutowareVisualizeMapFormat(const PlannerHNS::RoadNetwork& map,	visualization_msgs::MarkerArray& markerArray, bool show_connections,double x_tf,double y_tf,std::string frame_id)
 {
 	visualization_msgs::Marker lane_waypoint_marker;
-	lane_waypoint_marker.header.frame_id = "map";
+	lane_waypoint_marker.header.frame_id = frame_id;
 	//lane_waypoint_marker.header.stamp = ros::Time();
 	lane_waypoint_marker.ns = "road_network_vector_map";
 	lane_waypoint_marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -656,8 +659,8 @@ void ROSHelpers::ConvertFromRoadNetworkToAutowareVisualizeMapFormat(const Planne
 		  for(unsigned int p = 0; p < map.roadSegments.at(i).Lanes.at(j).points.size(); p++)
 		  {
 			geometry_msgs::Point point;
-			point.x = map.roadSegments.at(i).Lanes.at(j).points.at(p).pos.x;
-			point.y = map.roadSegments.at(i).Lanes.at(j).points.at(p).pos.y;
+			point.x = map.roadSegments.at(i).Lanes.at(j).points.at(p).pos.x - x_tf;
+			point.y = map.roadSegments.at(i).Lanes.at(j).points.at(p).pos.y - y_tf;
 			point.z = map.roadSegments.at(i).Lanes.at(j).points.at(p).pos.z;
 
 			std_msgs::ColorRGBA edge_color = roll_color;
@@ -712,7 +715,7 @@ void ROSHelpers::ConvertFromRoadNetworkToAutowareVisualizeMapFormat(const Planne
 	}
 
 	visualization_msgs::Marker stop_line_marker;
-		stop_line_marker.header.frame_id = "map";
+		stop_line_marker.header.frame_id = frame_id;
 		//stop_line_marker.header.stamp = ros::Time();
 		stop_line_marker.ns = "road_network_stop_line";
 		stop_line_marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -733,8 +736,8 @@ void ROSHelpers::ConvertFromRoadNetworkToAutowareVisualizeMapFormat(const Planne
 	  for(unsigned int p = 0; p < map.stopLines.at(sl).points.size(); p++)
 	  {
 		geometry_msgs::Point point;
-		point.x = map.stopLines.at(sl).points.at(p).pos.x;
-		point.y = map.stopLines.at(sl).points.at(p).pos.y;
+		point.x = map.stopLines.at(sl).points.at(p).pos.x - x_tf;
+		point.y = map.stopLines.at(sl).points.at(p).pos.y - y_tf;
 		point.z = map.stopLines.at(sl).points.at(p).pos.z;
 		stop_line_marker.points.push_back(point);
 	  }
@@ -742,7 +745,7 @@ void ROSHelpers::ConvertFromRoadNetworkToAutowareVisualizeMapFormat(const Planne
 	}
 
 	visualization_msgs::Marker boundary_marker;
-	boundary_marker.header.frame_id = "map";
+	boundary_marker.header.frame_id = frame_id;
 	//stop_line_marker.header.stamp = ros::Time();
 	boundary_marker.ns = "road_network_boundaries";
 	boundary_marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -773,8 +776,8 @@ void ROSHelpers::ConvertFromRoadNetworkToAutowareVisualizeMapFormat(const Planne
 	  {
 		  int curr_index = p;
 			geometry_msgs::Point point;
-			point.x = map.boundaries.at(ib).points.at(curr_index).pos.x;
-			point.y = map.boundaries.at(ib).points.at(curr_index).pos.y;
+			point.x = map.boundaries.at(ib).points.at(curr_index).pos.x - x_tf;
+			point.y = map.boundaries.at(ib).points.at(curr_index).pos.y - y_tf;
 			point.z = map.boundaries.at(ib).points.at(curr_index).pos.z;
 			boundary_marker.points.push_back(point);
 	  }
@@ -782,7 +785,7 @@ void ROSHelpers::ConvertFromRoadNetworkToAutowareVisualizeMapFormat(const Planne
 	}
 
 	visualization_msgs::Marker curb_marker;
-	curb_marker.header.frame_id = "map";
+	curb_marker.header.frame_id = frame_id;
 	//stop_line_marker.header.stamp = ros::Time();
 	curb_marker.ns = "road_network_curbs";
 	curb_marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -805,8 +808,8 @@ void ROSHelpers::ConvertFromRoadNetworkToAutowareVisualizeMapFormat(const Planne
 	  for(unsigned int p = 0; p < map.curbs.at(ic).points.size(); p++)
 	  {
 		geometry_msgs::Point point;
-		point.x = map.curbs.at(ic).points.at(p).pos.x;
-		point.y = map.curbs.at(ic).points.at(p).pos.y;
+		point.x = map.curbs.at(ic).points.at(p).pos.x - x_tf;
+		point.y = map.curbs.at(ic).points.at(p).pos.y - y_tf;
 		point.z = map.curbs.at(ic).points.at(p).pos.z;
 		curb_marker.points.push_back(point);
 	  }
@@ -834,11 +837,13 @@ void ROSHelpers::InitPredParticlesMarkers(const int& nMarkers, visualization_msg
 	}
 }
 
-void ROSHelpers::ConvertParticles(std::vector<PlannerHNS::WayPoint>& points, visualization_msgs::MarkerArray& part_mkrs, visualization_msgs::MarkerArray& part_markers_d, bool bOld)
+void ROSHelpers::ConvertParticles(std::vector<PlannerHNS::WayPoint>& points, visualization_msgs::MarkerArray& part_mkrs, visualization_msgs::MarkerArray& part_markers_d,bool bOld,const std::string frame_id,const double x_tf,const double y_tf)
 {
 	part_mkrs = part_markers_d;
 	for(unsigned int i = 0; i < points.size(); i++)
 	{
+		points.at(i).pos.x = points.at(i).pos.x - x_tf;
+		points.at(i).pos.y = points.at(i).pos.y - y_tf;
 		visualization_msgs::Marker mkr;
 		if(bOld)
 		{
@@ -870,6 +875,7 @@ void ROSHelpers::ConvertParticles(std::vector<PlannerHNS::WayPoint>& points, vis
 			else
 				mkr = CreateGenMarker(points.at(i).pos.x, points.at(i).pos.y,points.at(i).pos.z,points.at(i).pos.a,1,1,0,0.15,i,"Particles", visualization_msgs::Marker::ARROW);
 		}
+		mkr.header.frame_id = frame_id;
 
 		//mkr.scale.x = 0.3;
 		if(i < part_mkrs.markers.size())
@@ -880,12 +886,12 @@ void ROSHelpers::ConvertParticles(std::vector<PlannerHNS::WayPoint>& points, vis
 }
 
 void ROSHelpers::ConvertFromPlannerHRectangleToAutowareRviz(const std::vector<PlannerHNS::GPSPoint>& safety_rect,
-		visualization_msgs::Marker& marker)
+		visualization_msgs::Marker& marker,const std::string frame_id,const double x_tf,const double y_tf)
 {
 	//if(safety_rect.size() != 4) return;
 
 	visualization_msgs::Marker lane_waypoint_marker;
-	lane_waypoint_marker.header.frame_id = "map";
+	lane_waypoint_marker.header.frame_id = frame_id;
 	lane_waypoint_marker.header.stamp = ros::Time();
 	lane_waypoint_marker.ns = "global_lane_array_marker";
 	lane_waypoint_marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -903,8 +909,8 @@ void ROSHelpers::ConvertFromPlannerHRectangleToAutowareRviz(const std::vector<Pl
 	for(unsigned int i = 0; i < safety_rect.size(); i++)
 	{
 		geometry_msgs::Point p;
-		p.x = safety_rect.at(i).x;
-		p.y = safety_rect.at(i).y;
+		p.x = safety_rect.at(i).x - x_tf;
+		p.y = safety_rect.at(i).y - y_tf;
 		p.z = safety_rect.at(i).z;
 
 		lane_waypoint_marker.points.push_back(p);
@@ -912,8 +918,8 @@ void ROSHelpers::ConvertFromPlannerHRectangleToAutowareRviz(const std::vector<Pl
 	if(safety_rect.size() > 0)
 	{
 		geometry_msgs::Point p;
-		p.x = safety_rect.at(0).x;
-		p.y = safety_rect.at(0).y;
+		p.x = safety_rect.at(0).x - x_tf;
+		p.y = safety_rect.at(0).y - y_tf;
 		p.z = safety_rect.at(0).z;
 		lane_waypoint_marker.points.push_back(p);
 	}
@@ -945,10 +951,10 @@ void ROSHelpers::ConvertFromPlannerHRectangleToAutowareRviz(const std::vector<Pl
 
 }
 
-void ROSHelpers::TrajectoriesToMarkers(const std::vector<std::vector<std::vector<PlannerHNS::WayPoint> > >& paths, visualization_msgs::MarkerArray& markerArray)
+void ROSHelpers::TrajectoriesToMarkers(const std::vector<std::vector<std::vector<PlannerHNS::WayPoint> > >& paths, visualization_msgs::MarkerArray& markerArray,double x_tf,double y_tf,std::string frame_id)
 {
 	visualization_msgs::Marker lane_waypoint_marker;
-	lane_waypoint_marker.header.frame_id = "map";
+	lane_waypoint_marker.header.frame_id = frame_id;
 	lane_waypoint_marker.header.stamp = ros::Time();
 	lane_waypoint_marker.ns = "global_lane_array_marker";
 	lane_waypoint_marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -978,8 +984,8 @@ void ROSHelpers::TrajectoriesToMarkers(const std::vector<std::vector<std::vector
 			{
 			  geometry_msgs::Point point;
 
-			  point.x = paths.at(il).at(i).at(j).pos.x;
-			  point.y = paths.at(il).at(i).at(j).pos.y;
+			  point.x = paths.at(il).at(i).at(j).pos.x - x_tf;
+			  point.y = paths.at(il).at(i).at(j).pos.y - y_tf;
 			  point.z = paths.at(il).at(i).at(j).pos.z;
 
 			  std_msgs::ColorRGBA  edge_color = default_color;
@@ -1000,18 +1006,19 @@ void ROSHelpers::TrajectoriesToMarkers(const std::vector<std::vector<std::vector
 }
 
 void ROSHelpers::TrajectorySelectedToMarkers(const std::vector<PlannerHNS::WayPoint>& path, const double& r_path, const double& g_path,
-		const double& b_path, const double& r_circle, const double& g_circle, const double& b_circle, const double& radius, visualization_msgs::MarkerArray& markerArray, int skip)
+		const double& b_path, const double& r_circle, const double& g_circle, const double& b_circle, const double& radius, visualization_msgs::MarkerArray& markerArray,const std::string frame_id,const double x_tf,const double y_tf, int skip)
 {
 	visualization_msgs::Marker path_part, circle_part;
 
 	int count = 0;
 	path_part = CreateGenMarker(0,0,0,0,r_path,g_path,b_path,1.5,count,"Path_Part", visualization_msgs::Marker::LINE_STRIP);
 	path_part.color.a = 0.75;
+	path_part.header.frame_id = frame_id;
 	for (unsigned int i = 0; i < path.size(); i++)
 	{
 		  geometry_msgs::Point point;
-		  point.x = path.at(i).pos.x;
-		  point.y = path.at(i).pos.y;
+		  point.x = path.at(i).pos.x - x_tf;
+		  point.y = path.at(i).pos.y - y_tf;
 		  point.z = path.at(i).pos.z;
 
 
@@ -1062,7 +1069,7 @@ void ROSHelpers::TrajectorySelectedToCircles(const std::vector<PlannerHNS::WayPo
 	}
 }
 
-void ROSHelpers::DrivingPathToMarkers(const std::vector<std::pair<PlannerHNS::WayPoint, PlannerHNS::PolygonShape> >& path, visualization_msgs::MarkerArray& markerArray)
+void ROSHelpers::DrivingPathToMarkers(const std::vector<std::pair<PlannerHNS::WayPoint, PlannerHNS::PolygonShape> >& path, visualization_msgs::MarkerArray& markerArray,const std::string frame_id,const double x_tf,const double y_tf)
 {
 	visualization_msgs::Marker path_line, car_rect;
 	std::vector<geometry_msgs::Point> points_list;
@@ -1073,17 +1080,18 @@ void ROSHelpers::DrivingPathToMarkers(const std::vector<std::pair<PlannerHNS::Wa
 	for(const auto& item: path)
 	{
 		geometry_msgs::Point point;
-		point.x = item.first.pos.x;
-		point.y = item.first.pos.y;
+		point.x = item.first.pos.x - x_tf;
+		point.y = item.first.pos.y - y_tf;
 		point.z = item.first.pos.z;
 		points_list.push_back(point);
 
 		car_rect = CreateGenMarker(0,0,0,0, 0.9, 0.7, 0.5, 0.05, counter,"op_driving_path", visualization_msgs::Marker::LINE_STRIP);
+		car_rect.header.frame_id = frame_id;
 		for(const auto& p: item.second.points)
 		{
 			geometry_msgs::Point car_point;
-			car_point.x = p.x;
-			car_point.y = p.y;
+			car_point.x = p.x - x_tf;
+			car_point.y = p.y - y_tf;
 			car_point.z = p.z;
 			car_rect.points.push_back(car_point);
 		}
@@ -1091,8 +1099,8 @@ void ROSHelpers::DrivingPathToMarkers(const std::vector<std::pair<PlannerHNS::Wa
 		if(item.second.points.size() > 0)
 		{
 			geometry_msgs::Point car_point;
-			car_point.x = item.second.points.front().x;
-			car_point.y = item.second.points.front().y;
+			car_point.x = item.second.points.front().x - x_tf;
+			car_point.y = item.second.points.front().y - y_tf;
 			car_point.z = item.second.points.front().z;
 			car_rect.points.push_back(car_point);
 		}
@@ -1102,14 +1110,15 @@ void ROSHelpers::DrivingPathToMarkers(const std::vector<std::pair<PlannerHNS::Wa
 	}
 
 	path_line = CreateGenMarker(0,0,0,0, 0.5, 0.7, 0.9, 0.1, counter,"op_driving_path", visualization_msgs::Marker::LINE_STRIP);
+	path_line.header.frame_id = frame_id;
 	path_line.points = points_list;
 	markerArray.markers.push_back(path_line);
 }
 
-void ROSHelpers::TrajectoriesToColoredMarkers(const std::vector<std::vector<PlannerHNS::WayPoint> >& paths, const std::vector<PlannerHNS::TrajectoryCost>& traj_costs,const int& iClosest, visualization_msgs::MarkerArray& markerArray)
+void ROSHelpers::TrajectoriesToColoredMarkers(const std::vector<std::vector<PlannerHNS::WayPoint> >& paths, const std::vector<PlannerHNS::TrajectoryCost>& traj_costs,const int& iClosest, visualization_msgs::MarkerArray& markerArray,const std::string frame_id,const double x_tf,const double y_tf)
 {
 	visualization_msgs::Marker lane_waypoint_marker;
-	lane_waypoint_marker.header.frame_id = "map";
+	lane_waypoint_marker.header.frame_id = frame_id;
 	lane_waypoint_marker.header.stamp = ros::Time();
 	lane_waypoint_marker.ns = "local_lane_array_marker_colored";
 	lane_waypoint_marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -1134,8 +1143,8 @@ void ROSHelpers::TrajectoriesToColoredMarkers(const std::vector<std::vector<Plan
 		{
 			geometry_msgs::Point point;
 
-			point.x = paths.at(i).at(j).pos.x;
-			point.y = paths.at(i).at(j).pos.y;
+			point.x = paths.at(i).at(j).pos.x - x_tf;
+			point.y = paths.at(i).at(j).pos.y - y_tf;
 			point.z = paths.at(i).at(j).pos.z;
 
 			lane_waypoint_marker.points.push_back(point);
@@ -1545,9 +1554,9 @@ std::string ROSHelpers::GetBehaviorNameFromCode(const PlannerHNS::STATE_TYPE& be
 	return str;
 }
 
-void ROSHelpers::VisualizeBehaviorState(const PlannerHNS::WayPoint& currState, const PlannerHNS::BehaviorState& beh, const bool& bGreenLight, const int& avoidDirection, visualization_msgs::Marker& behaviorMarker, std::string ns,double size_factor)
+void ROSHelpers::VisualizeBehaviorState(const PlannerHNS::WayPoint& currState, const PlannerHNS::BehaviorState& beh, const bool& bGreenLight, const int& avoidDirection, visualization_msgs::Marker& behaviorMarker, std::string ns,std::string frame_id,const double x_tf,const double y_tf,double size_factor)
 {
-	behaviorMarker.header.frame_id = "map";
+	behaviorMarker.header.frame_id = frame_id;
 	behaviorMarker.header.stamp = ros::Time();
 	behaviorMarker.ns = ns;
 	behaviorMarker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
@@ -1573,8 +1582,8 @@ void ROSHelpers::VisualizeBehaviorState(const PlannerHNS::WayPoint& currState, c
 
 	geometry_msgs::Point point;
 
-	point.x = currState.pos.x;
-	point.y = currState.pos.y;
+	point.x = currState.pos.x - x_tf;
+	point.y = currState.pos.y - y_tf;
 	point.z = currState.pos.z+2.0;
 
 	behaviorMarker.pose.position = point;
@@ -1593,9 +1602,9 @@ void ROSHelpers::VisualizeBehaviorState(const PlannerHNS::WayPoint& currState, c
 	behaviorMarker.text = str_out.str();
 }
 
-void ROSHelpers::VisualizeIntentionState(const PlannerHNS::WayPoint& currState, const PlannerHNS::BEH_STATE_TYPE& beh, visualization_msgs::Marker& behaviorMarker, std::string ns,double size_factor)
+void ROSHelpers::VisualizeIntentionState(const PlannerHNS::WayPoint& currState, const PlannerHNS::BEH_STATE_TYPE& beh, visualization_msgs::Marker& behaviorMarker, std::string ns,double size_factor,const std::string frame_id,const double x_tf,const double y_tf)
 {
-	behaviorMarker.header.frame_id = "map";
+	behaviorMarker.header.frame_id = frame_id;
 	behaviorMarker.header.stamp = ros::Time();
 	behaviorMarker.ns = ns;
 	behaviorMarker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
@@ -1614,8 +1623,8 @@ void ROSHelpers::VisualizeIntentionState(const PlannerHNS::WayPoint& currState, 
 
 	geometry_msgs::Point point;
 
-	point.x = currState.pos.x;
-	point.y = currState.pos.y;
+	point.x = currState.pos.x - x_tf;
+	point.y = currState.pos.y - y_tf;
 	point.z = currState.pos.z+3.0;
 
 	behaviorMarker.pose.position = point;
@@ -1987,10 +1996,10 @@ void ROSHelpers::ConvertFromAutowareLaneToLocalLane(const autoware_msgs::Lane& t
 }
 
 void ROSHelpers::createGlobalLaneArrayMarker(std_msgs::ColorRGBA color,
-		const autoware_msgs::LaneArray &lane_waypoints_array, visualization_msgs::MarkerArray& markerArray)
+		const autoware_msgs::LaneArray &lane_waypoints_array, visualization_msgs::MarkerArray& markerArray,double x_tf,double y_tf,std::string frame_id)
 {
   visualization_msgs::Marker lane_waypoint_marker;
-  lane_waypoint_marker.header.frame_id = "map";
+  lane_waypoint_marker.header.frame_id = frame_id;
   lane_waypoint_marker.header.stamp = ros::Time();
   lane_waypoint_marker.ns = "global_lane_array_marker";
   lane_waypoint_marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -2011,6 +2020,8 @@ void ROSHelpers::createGlobalLaneArrayMarker(std_msgs::ColorRGBA color,
     {
       geometry_msgs::Point point;
       point = lane_waypoints_array.lanes.at(i).waypoints.at(j).pose.pose.position;
+	  point.x = point.x - x_tf;
+	  point.y = point.y - y_tf;
       lane_waypoint_marker.points.push_back(point);
     }
     markerArray.markers.push_back(lane_waypoint_marker);
@@ -2020,12 +2031,12 @@ void ROSHelpers::createGlobalLaneArrayMarker(std_msgs::ColorRGBA color,
 }
 
 void ROSHelpers::createGlobalLaneArrayVelocityMarker(const autoware_msgs::LaneArray &lane_waypoints_array
-		, visualization_msgs::MarkerArray& markerArray)
+		, visualization_msgs::MarkerArray& markerArray,double x_tf,double y_tf,std::string frame_id)
 {
   visualization_msgs::MarkerArray tmp_marker_array;
   // display by markers the velocity of each waypoint.
   visualization_msgs::Marker velocity_marker;
-  velocity_marker.header.frame_id = "map";
+  velocity_marker.header.frame_id = frame_id;
   velocity_marker.header.stamp = ros::Time();
   velocity_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
   velocity_marker.action = visualization_msgs::Marker::ADD;
@@ -2054,6 +2065,8 @@ void ROSHelpers::createGlobalLaneArrayVelocityMarker(const autoware_msgs::LaneAr
       relative_p.y = 0.5;
       velocity_marker.pose.position = calcAbsoluteCoordinate(relative_p, lane_waypoints_array.lanes.at(i).waypoints.at(j).pose.pose);
       velocity_marker.pose.position.z += 0.2;
+	  velocity_marker.pose.position.x = velocity_marker.pose.position.x - x_tf;
+	  velocity_marker.pose.position.y = velocity_marker.pose.position.y - y_tf;
 
       // double to string
       std::ostringstream str_out;
@@ -2072,11 +2085,11 @@ void ROSHelpers::createGlobalLaneArrayVelocityMarker(const autoware_msgs::LaneAr
 }
 
 void ROSHelpers::createGlobalLaneArrayOrientationMarker(const autoware_msgs::LaneArray &lane_waypoints_array
-		, visualization_msgs::MarkerArray& markerArray)
+		, visualization_msgs::MarkerArray& markerArray,double x_tf,double y_tf,std::string frame_id)
 {
   visualization_msgs::MarkerArray tmp_marker_array;
   visualization_msgs::Marker lane_waypoint_marker;
-  lane_waypoint_marker.header.frame_id = "map";
+  lane_waypoint_marker.header.frame_id = frame_id;
   lane_waypoint_marker.header.stamp = ros::Time();
   lane_waypoint_marker.type = visualization_msgs::Marker::ARROW;
   lane_waypoint_marker.action = visualization_msgs::Marker::ADD;
@@ -2101,6 +2114,8 @@ void ROSHelpers::createGlobalLaneArrayOrientationMarker(const autoware_msgs::Lan
     {
     	lane_waypoint_marker.id = count;
     	lane_waypoint_marker.pose = lane_waypoints_array.lanes.at(i).waypoints.at(j).pose.pose;
+		lane_waypoint_marker.pose.position.x = lane_waypoint_marker.pose.position.x - x_tf;
+		lane_waypoint_marker.pose.position.y = lane_waypoint_marker.pose.position.y - y_tf; 
 
     	if(lane_waypoints_array.lanes.at(i).waypoints.at(j).dtlane.dir == 1)
     	{

@@ -44,6 +44,7 @@ void MapHandler::InitMapHandler(ros::NodeHandle& nh, const std::string& source_t
 	if(iSource == 0)
 	{
 		m_MapType = PlannerHNS::MAP_AUTOWARE;
+		sub_bin_map = nh.subscribe("lanelet_map_bin", 1, &MapHandler::callbackGetLanelet2, this);
 	}
 	else if (iSource == 1)
 	{
@@ -56,35 +57,27 @@ void MapHandler::InitMapHandler(ros::NodeHandle& nh, const std::string& source_t
 	else if(iSource == 3)
 	{
 		m_MapType = PlannerHNS::MAP_LANELET_2;
+		std::cout << "This should be it:" << str_origin << "\n";
 		std::vector<std::string> lat_lon_alt = PlannerHNS::MappingHelpers::SplitString(str_origin, ",");
+		for(auto stringer : lat_lon_alt)
+		{
+			std::cout << stringer;
+		}
+		std::cout << "\n";
 		if(lat_lon_alt.size() == 3)
 		{
 			m_MapOrigin.pos.lat = atof(lat_lon_alt.at(0).c_str());
 			m_MapOrigin.pos.lon = atof(lat_lon_alt.at(1).c_str());
-			m_MapOrigin.pos.alt = atof(lat_lon_alt.at(2).c_str());
+			m_MapOrigin.pos.alt = 0.0;
 		}
+		std::cout << lat_lon_alt.size() << "\n";
 	}
 	else if(iSource == 4)
 	{
 		m_MapType = PlannerHNS::MAP_KML_FILE_NAME;
 	}
 
-	sub_map_file_name = nh.subscribe("/assure_kml_map_file_name", 1, &MapHandler::callbackGetkmlMapFileName, this);
-	sub_bin_map = nh.subscribe("/lanelet_map_bin", 1, &MapHandler::callbackGetLanelet2, this);
-	sub_lanes = nh.subscribe("/vector_map_info/lane", 1, &MapHandler::callbackGetVMLanes,  this);
-	sub_points = nh.subscribe("/vector_map_info/point", 1, &MapHandler::callbackGetVMPoints,  this);
-	sub_dt_lanes = nh.subscribe("/vector_map_info/dtlane", 1, &MapHandler::callbackGetVMdtLanes,  this);
-	sub_intersect = nh.subscribe("/vector_map_info/cross_road", 1, &MapHandler::callbackGetVMIntersections,  this);
-	sup_area = nh.subscribe("/vector_map_info/area", 1, &MapHandler::callbackGetVMAreas,  this);
-	sub_lines = nh.subscribe("/vector_map_info/line", 1, &MapHandler::callbackGetVMLines,  this);
-	sub_stop_line = nh.subscribe("/vector_map_info/stop_line", 1, &MapHandler::callbackGetVMStopLines,  this);
-	sub_signals = nh.subscribe("/vector_map_info/signal", 1, &MapHandler::callbackGetVMSignal,  this);
-	sub_vectors = nh.subscribe("/vector_map_info/vector", 1, &MapHandler::callbackGetVMVectors,  this);
-	sub_curbs = nh.subscribe("/vector_map_info/curb", 1, &MapHandler::callbackGetVMCurbs,  this);
-	sub_edges = nh.subscribe("/vector_map_info/road_edge", 1, &MapHandler::callbackGetVMRoadEdges,  this);
-	sub_way_areas = nh.subscribe("/vector_map_info/way_area", 1, &MapHandler::callbackGetVMWayAreas,  this);
-	sub_cross_walk = nh.subscribe("/vector_map_info/cross_walk", 1, &MapHandler::callbackGetVMCrossWalks,  this);
-	sub_nodes = nh.subscribe("/vector_map_info/node", 1, &MapHandler::callbackGetVMNodes,  this);
+	std::cout << "Autoware format is here\n";
 }
 
 void MapHandler::LoadMap(RoadNetwork& map, bool bEnableLaneChange)
@@ -150,8 +143,9 @@ void MapHandler::callbackGetkmlMapFileName(const std_msgs::String& file_name)
 	m_bKmlMapFileNameReceived = true;
 }
 
-void MapHandler::callbackGetLanelet2(const autoware_lanelet2_msgs::MapBin& msg)
+void MapHandler::callbackGetLanelet2(autoware_lanelet2_msgs::MapBin msg)
 {
+	std::cout << "Get in there Lanetlet map\n";
 	m_Lanelet2Bin = msg;
 	m_bMapBinReceived = true;
 }
