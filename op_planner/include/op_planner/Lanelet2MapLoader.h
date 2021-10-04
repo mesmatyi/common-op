@@ -27,6 +27,14 @@
 #include <lanelet2_extension/utility/utilities.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
 #include <lanelet2_extension/visualization/visualization.h>
+#include <lanelet2_core/geometry/Area.h>
+#include <lanelet2_core/geometry/Lanelet.h>
+#include <lanelet2_core/primitives/Area.h>
+#include <lanelet2_core/primitives/LineString.h>
+#include <lanelet2_core/primitives/Point.h>
+#include <lanelet2_core/primitives/Polygon.h>
+#include <lanelet2_core/utility/Units.h>
+
 
 namespace PlannerHNS {
 

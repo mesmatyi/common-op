@@ -161,21 +161,17 @@ void Lanelet2MapLoader::GetCurbsFromLanelet(lanelet::LaneletMapPtr l2_map, Plann
 
 	for (const auto& ll : road_lanelets)
 	{
-		std::vector<geometry_msgs::Polygon> triangles;
-		lanelet::visualization::lanelet2Triangle(ll, &triangles);
-		for (const auto& triangle : triangles)
+		for (const auto& ll_point : ll.rightBound())
 		{
-			for (const auto& p : triangle.points)
-			{
-				WayPoint wp;
-				GPSPoint point;
-				point.x = p.x;
-				point.y = p.y;
-				point.z = p.z;
+			
+			WayPoint wp;
+			GPSPoint point;
+			point.x = ll_point.x();
+			point.y = ll_point.y();
+			point.z = ll_point.z();
 
-				wp.pos = point;
-				curb.points.push_back(wp);
-			}
+			wp.pos = point;
+			curb.points.push_back(wp);
 		}
 
 	}
