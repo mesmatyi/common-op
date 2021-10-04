@@ -26,6 +26,7 @@
 #include <lanelet2_extension/io/autoware_osm_parser.h>
 #include <lanelet2_extension/utility/utilities.h>
 #include <autoware_lanelet2_msgs/MapBin.h>
+#include <lanelet2_extension/visualization/visualization.h>
 
 namespace PlannerHNS {
 
@@ -49,6 +50,7 @@ public:
 	void LoadMap(const std::string& fileName, PlannerHNS::RoadNetwork& map);
 
 private:
+	void GetCurbsFromLanelet(lanelet::LaneletMapPtr l2_map, PlannerHNS::RoadNetwork& map);
 	void FromLaneletToRoadNetwork(lanelet::LaneletMapPtr l2_map, PlannerHNS::RoadNetwork& map, lanelet::Projector* proj);
 	void CreateWayPointsFromLineString(const PlannerHNS::RoadNetwork& map,std::vector<PlannerHNS::WayPoint>& points, lanelet::ConstLineString3d& line_string, lanelet::Projector* proj, int lane_id = 0);
 	void CreateWayPointsFromLineString(const PlannerHNS::RoadNetwork& map,std::vector<PlannerHNS::WayPoint>& points, const lanelet::LineString3d& line_string, lanelet::Projector* proj, int lane_id = 0);

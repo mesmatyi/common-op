@@ -152,6 +152,35 @@ void Lanelet2MapLoader::CreateLane(lanelet::routing::RoutingGraphUPtr& routingGr
 
 	PlannerHNS::PlanningHelpers::CalcAngleAndCost(l.points);
 }
+void Lanelet2MapLoader::GetCurbsFromLanelet(lanelet::LaneletMapPtr l2_map, PlannerHNS::RoadNetwork& map)
+{
+	Curb curb;
+
+	lanelet::ConstLanelets all_lanelets = lanelet::utils::query::laneletLayer(l2_map);
+  	lanelet::ConstLanelets road_lanelets = lanelet::utils::query::roadLanelets(all_lanelets);
+
+	for (const auto& ll : road_lanelets)
+	{
+		std::vector<geometry_msgs::Polygon> triangles;
+		lanelet::visualization::lanelet2Triangle(ll, &triangles);
+		for (const auto& triangle : triangles)
+		{
+			for (const auto& p : triangle.points)
+			{
+				WayPoint wp;
+				GPSPoint point;
+				point.x = p.x;
+				point.y = p.y;
+				point.z = p.z;
+
+				wp.pos = point;
+				curb.points.push_back(wp);
+			}
+		}
+
+	}
+	map.curbs.push_back(curb);
+} 
 
 void Lanelet2MapLoader::FromLaneletToRoadNetwork(lanelet::LaneletMapPtr l2_map, PlannerHNS::RoadNetwork& map, lanelet::Projector* proj)
 {
@@ -364,6 +393,9 @@ void Lanelet2MapLoader::FromLaneletToRoadNetwork(lanelet::LaneletMapPtr l2_map, 
 	//Link waypoints
 	std::cout << " >> Link missing branches and waypoints... " << std::endl;
 	MappingHelpers::LinkMissingBranchingWayPointsV2(map);
+
+	// Generate curbs
+	GetCurbsFromLanelet(l2_map,map);
 
 	std::cout << " >> Connect Wayarea (boundaries) to waypoints ... " << std::endl;
 	MappingHelpers::ConnectBoundariesToWayPoints(map);
