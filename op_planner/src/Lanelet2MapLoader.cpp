@@ -154,28 +154,42 @@ void Lanelet2MapLoader::CreateLane(lanelet::routing::RoutingGraphUPtr& routingGr
 }
 void Lanelet2MapLoader::GetCurbsFromLanelet(lanelet::LaneletMapPtr l2_map, PlannerHNS::RoadNetwork& map)
 {
-	Curb curb;
 
 	lanelet::ConstLanelets all_lanelets = lanelet::utils::query::laneletLayer(l2_map);
   	lanelet::ConstLanelets road_lanelets = lanelet::utils::query::roadLanelets(all_lanelets);
+
+	bool valid_point = true;
 
 	for (const auto& ll : road_lanelets)
 	{
 		for (const auto& ll_point : ll.rightBound())
 		{
-			
-			WayPoint wp;
-			GPSPoint point;
-			point.x = ll_point.x();
-			point.y = ll_point.y();
-			point.z = ll_point.z();
-
-			wp.pos = point;
-			curb.points.push_back(wp);
+			Curb curb;
+			valid_point = true;
+			for (const auto& ll_search : road_lanelets)
+			{
+				if(ll_search.id() != ll.id())
+				{
+					if(boost::geometry::within(ll_point,ll_search.polygon3d()))
+					{
+						valid_point = false;
+						break;
+					}
+				}
+			}
+			if(valid_point && !isnan(ll_point.x()) && !isnan(ll_point.y()) && !isnan(ll_point.z()))
+			{
+				WayPoint wp;
+				GPSPoint point;
+				point.x = ll_point.x();
+				point.y = ll_point.y();
+				point.z = ll_point.z();
+				wp.pos = point;
+				curb.points.push_back(wp);
+			}
+			map.curbs.push_back(curb);		
 		}
-
 	}
-	map.curbs.push_back(curb);
 } 
 
 void Lanelet2MapLoader::FromLaneletToRoadNetwork(lanelet::LaneletMapPtr l2_map, PlannerHNS::RoadNetwork& map, lanelet::Projector* proj)
