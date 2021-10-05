@@ -162,7 +162,24 @@ void Lanelet2MapLoader::GetCurbsFromLanelet(lanelet::LaneletMapPtr l2_map, Plann
 
 	for (const auto& ll : road_lanelets)
 	{
+		std::vector<WayPoint> path;
 		for (const auto& ll_point : ll.rightBound())
+		{
+			WayPoint wp;
+			GPSPoint point;
+			point.x = ll_point.x();
+			point.y = ll_point.y();
+			point.z = ll_point.z();
+			wp.pos = point;
+			path.push_back(wp);
+		}
+		PlannerHNS::PlanningHelpers::FixPathDensity(path ,1.0);
+		lanelet::LineString3d ls(lanelet::utils::getId(), {});
+		for(const auto& wp : path)
+		{
+			ls.push_back(lanelet::Point3d(lanelet::utils::getId(), wp.pos.x, wp.pos.y, wp.pos.z));
+		}
+		for (const auto& ll_point : ls)
 		{
 			Curb curb;
 			valid_point = true;

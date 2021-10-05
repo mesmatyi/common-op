@@ -34,6 +34,7 @@
 #include <lanelet2_core/primitives/Point.h>
 #include <lanelet2_core/primitives/Polygon.h>
 #include <lanelet2_core/utility/Units.h>
+#include <lanelet2_core/primitives/LineString.h>
 #include <boost/geometry.hpp>
 
 
