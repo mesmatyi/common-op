@@ -73,6 +73,11 @@ void MotionControl::Init(const ControllerParams& params, const ControllerHyperPa
 	m_pidBrakePedal.Setlimit(m_VehicleInfo.max_brake_value, 0);
 }
 
+void MotionControl::setPID(double P,double I, double D)
+{
+	m_pidSteering.setPID(P,I,D);
+}
+
 MotionControl::~MotionControl()
 {
 	if(m_HyperParams.bEnableLogs)

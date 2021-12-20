@@ -428,6 +428,12 @@ void PIDController::Init(const double& kp, const double& ki, const double& kd)
 	this->ki = ki;
 	this->kd = kd;
 }
+void PIDController::setPID(double P,double I,double D)
+{
+	this->kp = P;
+	this->ki = I;
+	this->kd = D;
+}
 
 LowpassFilter::LowpassFilter()
 {

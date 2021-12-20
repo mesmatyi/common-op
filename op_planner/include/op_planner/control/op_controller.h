@@ -66,6 +66,8 @@ public:
 
 	void Init(const PlannerHNS::ControllerParams& params, const ControllerHyperParams& hyper_params, const PlannerHNS::CAR_BASIC_INFO& vehicleInfo);
 
+	void setPID(double P,double I, double D);
+
 	PlannerHNS::ExtendedVehicleState DoOneStep(const double& dt, const PlannerHNS::BehaviorState& behavior,
 				const std::vector<PlannerHNS::WayPoint>& path, const PlannerHNS::WayPoint& currPose,
 				const PlannerHNS::VehicleState& vehicleState, const bool& bNewTrajectory);
