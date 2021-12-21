@@ -612,6 +612,7 @@ void DecisionMaker::InitBehaviorStates()
  double DecisionMaker::UpdateVelocityDirectlyToTrajectorySmooth(BehaviorState& beh, const VehicleState& CurrStatus, const double& dt)
  {
 
+
 	 PlannerHNS::PreCalculatedConditions *preCalcPrams = m_pCurrentBehaviorState->GetCalcParams();
 
 	 if(!preCalcPrams || m_TotalPaths.size() == 0) return 0;

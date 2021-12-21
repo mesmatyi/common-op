@@ -151,7 +151,8 @@ bool MotionControl::FindNextWayPoint(const std::vector<PlannerHNS::WayPoint>& pa
 	if(path.size()==0) return false;
 
 	follow_distance = PlanningHelpers::CalculateLookAheadDistance(m_Params.SteeringDelay, velocity, m_Params.minPursuiteDistance);
-	//follow_distance = m_Params.minPursuiteDistance;
+	// follow_distance = 15.0;
+	std::cout << "Follow dist: " << follow_distance << "\n";
 
 	RelativeInfo info;
 	PlanningHelpers::GetRelativeInfo(path, state, info);
@@ -171,6 +172,8 @@ void MotionControl::SteerControllerUpdate(const double& dt, const PlannerHNS::Wa
 	if(CurrBehavior.state != INITIAL_STATE && CurrBehavior.state != FINISH_STATE)
 	{
 		AngleControllerPart(dt, CurrPose, TargetPose, lateralErr, desiredSteerAngle);
+
+		// std::cout <<"Desired angle: " << desiredSteerAngle <<"\n";
 
 		if(desiredSteerAngle > m_VehicleInfo.max_wheel_angle)
 		{
@@ -235,6 +238,8 @@ void MotionControl::AngleControllerPart(const double& dt, const PlannerHNS::WayP
 	double target_a = atan2(way_point.pos.y - state.pos.y, way_point.pos.x - state.pos.x);
 	//Use angle Error
 	double e =  UtilityHNS::UtilityH::SplitPositiveAngle(target_a - current_a);
+
+	std::cout << "Angle error: " << e << "\n";
 
 	//Use CTE (cross track error)
 	//TODO use lateral error instead of angle error
@@ -656,6 +661,9 @@ PlannerHNS::ExtendedVehicleState MotionControl::DoOneStep(const double& dt, cons
 	{
 		LogControlData(dt, behavior, currPose, vehicleState, desiredState);
 	}
+	std::cout << desiredState.steer << "\n";
+
+	desiredState.speed = 3.0;
 
 	m_PrevBehaviorStatus = behavior;
 	m_PrevDesiredState = desiredState;

@@ -2559,6 +2559,8 @@ double PlanningHelpers::GetACCVelocityModelBased(const double& dt, const double&
 	{
 		double acceleration_critical = vehicleInfo.max_acceleration * ctrlParams.accelPushRatio;
 
+		std:cout << "Diff: " << CurrBehavior.maxVelocity - CurrSpeed << "\n";
+
 		if(CurrBehavior.maxVelocity < CurrSpeed)
 		{
 			acceleration_critical = vehicleInfo.max_deceleration * ctrlParams.brakePushRatio;

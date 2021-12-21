@@ -1173,7 +1173,7 @@ public:
 		currentGoalID = 0;
 		prevGoalID = -1;
 		currentVelocity	= 0;
-		minStoppingDistance = 1;
+		minStoppingDistance = 50;
 		bOutsideControl	= 0;
 		bGreenOutsideControl = false;
 		//distance to stop
