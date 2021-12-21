@@ -61,6 +61,7 @@ public:
 	double getPID(const double& currValue, const double& targetValue);
 	double getPID(const double& e);
 	double getTimeDependentPID(const double& e, const double& dt);
+	void setPID(double P,double I,double D);
 	void ResetD();
 	void ResetI();
 	void Reset();
