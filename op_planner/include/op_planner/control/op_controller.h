@@ -56,7 +56,7 @@ public:
 
 	void SteerControllerUpdate(const double& dt, const PlannerHNS::WayPoint& CurrPose, const PlannerHNS::WayPoint& TargetPose,
 				const PlannerHNS::VehicleState& CurrStatus, const PlannerHNS::BehaviorState& CurrBehavior,
-				const double& lateralErr, double& desiredSteerAngle);
+				double& lateralErr, double& desiredSteerAngle);
 
 	int StrokeControllerUpdateTwoPID(const double& dt, const PlannerHNS::VehicleState& CurrStatus,
 			const PlannerHNS::BehaviorState& CurrBehavior, double& desiredAccel, double& desiredBrake, PlannerHNS::SHIFT_POS& desiredShift);
@@ -68,9 +68,14 @@ public:
 
 	void setPID(double P,double I, double D);
 
+	void setLookahead(double look)
+	{
+		m_lookahead = look;
+	}
+
 	PlannerHNS::ExtendedVehicleState DoOneStep(const double& dt, const PlannerHNS::BehaviorState& behavior,
 				const std::vector<PlannerHNS::WayPoint>& path, const PlannerHNS::WayPoint& currPose,
-				const PlannerHNS::VehicleState& vehicleState, const bool& bNewTrajectory);
+				const PlannerHNS::VehicleState& vehicleState, const bool& bNewTrajectory,double& angle_error);
 
 	PlannerHNS::VehicleState DoOneSimulationStep(const double& dt, const std::vector<PlannerHNS::WayPoint>& path, const PlannerHNS::WayPoint& currPose,
 					const PlannerHNS::VehicleState& vehicleState, const bool& bNewTrajectory);
@@ -100,6 +105,7 @@ private:
 	PlannerHNS::ExtendedVehicleState m_PrevDesiredState;
 	double m_ffEstimatedVelocity;
 	double m_PredictedVelMinusRealVel;
+	double m_lookahead;
 
 	/**
 	 * Log Information
@@ -154,7 +160,7 @@ private:
 
 	bool FindNextWayPoint(const std::vector<PlannerHNS::WayPoint>& path, const PlannerHNS::WayPoint& state,
 			const double& velocity, PlannerHNS::WayPoint& pursuite_point, PlannerHNS::WayPoint& prep,
-			double& lateral_err, double& follow_distance);
+			double& lateral_err, double& follow_distance,double& waypoint_angle);
 
 	void TorqueControllerPart(const double& dt, const PlannerHNS::WayPoint& state, const PlannerHNS::WayPoint& way_point,
 			const double& lateral_error, double& torque_d);
@@ -166,7 +172,7 @@ private:
 				const PlannerHNS::BehaviorState& CurrBehavior, double& desiredVelocity, PlannerHNS::SHIFT_POS& desiredShift);
 
 	void AngleControllerPart(const double& dt, const PlannerHNS::WayPoint& state, const PlannerHNS::WayPoint& way_point,
-			const double& lateral_error, double& steer_angle_d);
+			double& lateral_error, double& steer_angle_d);
 
 	void PredictMotion(double& x, double &y, double& heading, double steering, double velocity,
 			double wheelbase, double time_elapsed);

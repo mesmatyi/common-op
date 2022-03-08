@@ -9,6 +9,7 @@
 #include <cmath>
 #include <stdlib.h>
 #include <iostream>
+#include <math.h>
 
 namespace PlannerHNS
 {
@@ -37,6 +38,7 @@ MotionControl::MotionControl()
 	m_PrevDistanceError = 0;
 	m_ffEstimatedVelocity = 0;
 	m_PredictedVelMinusRealVel = 0;
+	m_lookahead = 6.0;
 
 	UtilityHNS::UtilityH::GetTickCount(m_SteerDelayTimer);
 	UtilityHNS::UtilityH::GetTickCount(m_VelocityDelayTimer);
@@ -151,18 +153,20 @@ void MotionControl::UpdateCurrentPath(const std::vector<PlannerHNS::WayPoint>& p
 
 bool MotionControl::FindNextWayPoint(const std::vector<PlannerHNS::WayPoint>& path, const PlannerHNS::WayPoint& state,
 		const double& velocity, PlannerHNS::WayPoint& pursuite_point, PlannerHNS::WayPoint& prep,
-		double& lateral_err, double& follow_distance)
+		double& lateral_err, double& follow_distance,double& waypoint_angle)
 {
 	if(path.size()==0) return false;
 
 	follow_distance = PlanningHelpers::CalculateLookAheadDistance(m_Params.SteeringDelay, velocity, m_Params.minPursuiteDistance);
-	// follow_distance = 15.0;
-	std::cout << "Follow dist: " << follow_distance << "\n";
+	follow_distance = 4.0;
+	// std::cout << "Follow dist: " << follow_distance << "\n";
 
 	RelativeInfo info;
 	PlanningHelpers::GetRelativeInfo(path, state, info);
-	unsigned int dummy_index = 0;
-	pursuite_point = PlanningHelpers::GetFollowPointOnTrajectory(path, info, follow_distance, dummy_index);
+	unsigned int target_index = 0;
+	pursuite_point = PlanningHelpers::GetFollowPointOnTrajectory(path, info, follow_distance, target_index);
+
+	waypoint_angle = atan2(path.at(target_index+1).pos.y - pursuite_point.pos.y,path.at(target_index+1).pos.x - pursuite_point.pos.x);
 	prep = info.perp_point;
 	lateral_err = info.perp_distance;
 	m_iPrevWayPoint = info.iFront;
@@ -172,7 +176,7 @@ bool MotionControl::FindNextWayPoint(const std::vector<PlannerHNS::WayPoint>& pa
 
 void MotionControl::SteerControllerUpdate(const double& dt, const PlannerHNS::WayPoint& CurrPose, const PlannerHNS::WayPoint& TargetPose,
 		const PlannerHNS::VehicleState& CurrStatus, const PlannerHNS::BehaviorState& CurrBehavior,
-		const double& lateralErr, double& desiredSteerAngle)
+		double& lateralErr, double& desiredSteerAngle)
 {
 	if(CurrBehavior.state != INITIAL_STATE && CurrBehavior.state != FINISH_STATE)
 	{
@@ -237,14 +241,21 @@ void MotionControl::TorqueControllerPart(const double& dt, const PlannerHNS::Way
 }
 
 void MotionControl::AngleControllerPart(const double& dt, const PlannerHNS::WayPoint& state, const PlannerHNS::WayPoint& way_point,
-		const double& lateral_error, double& steer_angle_d)
+		double& lateral_error, double& steer_angle_d)
 {
-	double current_a = UtilityHNS::UtilityH::SplitPositiveAngle(state.pos.a);
 	double target_a = atan2(way_point.pos.y - state.pos.y, way_point.pos.x - state.pos.x);
+
+	//std::cout << target_a*(180/M_PI) << " " << state.pos.a*(180/M_PI) << "\n";
+
+	double current_a = UtilityHNS::UtilityH::SplitPositiveAngle(state.pos.a);
 	//Use angle Error
+	//std::cout << "Points: " << way_point.pos.y - state.pos.y << " " << way_point.pos.x - state.pos.x << "\n";
+
 	double e =  UtilityHNS::UtilityH::SplitPositiveAngle(target_a - current_a);
 
-	std::cout << "Angle error: " << e << "\n";
+	lateral_error = e;
+
+	//std::cout << "Angle error: " << e*(180/M_PI) << "\n";
 
 	//Use CTE (cross track error)
 	//TODO use lateral error instead of angle error
@@ -541,11 +552,76 @@ void MotionControl::VelocityControllerUpdateUsingInternalOpenPlannerACC(const do
 //	m_DesiredSafeDistance = safe_follow_distance;
 	m_PredictedVelMinusRealVel = m_ffEstimatedVelocity - CurrStatus.speed;
 }
+double normalize_angle(double angle)
+{
+    
+    while (angle > M_PI)
+	{
+        angle -= 2.0 * M_PI;
+	}
+
+    while (angle < -M_PI)
+	{
+        angle += 2.0 * M_PI;
+	}
+
+    return angle;
+}
+
+void StanleySteerController( const PlannerHNS::WayPoint& origin_pose,double& desiredSteerAngle, const PlannerHNS::WayPoint& TargetPose,const PlannerHNS::VehicleState& vehicleState,double waypoint_angle)
+{
+	PlannerHNS::WayPoint CurrPose;
+	CurrPose.pos.x =  origin_pose.pos.x + 2.7 * cos(origin_pose.pos.a);
+	CurrPose.pos.y =  origin_pose.pos.y + 2.7 * sin(origin_pose.pos.a);
+
+	CurrPose.pos.a = normalize_angle(origin_pose.pos.a);
+
+	double front_axle_vec_one = -cos(CurrPose.pos.a + M_PI/2);
+	double front_axle_vec_two = -sin(CurrPose.pos.a + M_PI/2);
+
+	// std::cout << "Vec1: " << front_axle_vec_one << "\n";
+	// std::cout << "Vec2: " << front_axle_vec_two << "\n";
+	std::cout <<"Currpose angle : " << waypoint_angle*(180/M_PI) << " " << CurrPose.pos.a*(180/M_PI) << "\n";
+
+	double error_front_axle = (front_axle_vec_one*(TargetPose.pos.x - CurrPose.pos.x)) + (front_axle_vec_two*(TargetPose.pos.y - CurrPose.pos.y));
+
+	std::cout << "Front axle error: " << error_front_axle << "\n";
+
+	double theta_e = normalize_angle(waypoint_angle - CurrPose.pos.a);
+
+	// std::cout << "Car speed in kmh: " << vehicleState.speed << "\n"; 
+
+	double theta_d = atan2(0.5 * error_front_axle,vehicleState.speed*3.6);
+
+	double delta = theta_e + theta_d;
+
+
+	//std::cout <<"Vehicle steer: " << vehicleState.steer << "\n";
+
+	//desiredSteerAngle = vehicleState.speed / 2.5 * tan(delta);
+	if(delta > 0.593412)
+	{
+		delta = 0.593412;
+	}
+	else if(delta < -0.593412)
+	{
+		delta = -0.593412;
+	}
+	//std::cout << theta_e*(180/M_PI) << " " << theta_d*(180/M_PI) << " " << desiredSteerAngle << "\n";
+	std::cout << "Delta : " << delta*(180/M_PI) << "\n";
+
+	desiredSteerAngle = delta;
+
+	// std::cout << "\n\n";
+
+}
 
 PlannerHNS::ExtendedVehicleState MotionControl::DoOneStep(const double& dt, const PlannerHNS::BehaviorState& behavior,
 		const std::vector<PlannerHNS::WayPoint>& path, const PlannerHNS::WayPoint& currPose,
-		const PlannerHNS::VehicleState& vehicleState, const bool& bNewTrajectory)
+		const PlannerHNS::VehicleState& vehicleState, const bool& bNewTrajectory,double& angle_error)
 {
+
+	double waypoint_angle = 0;
 	if(bNewTrajectory && path.size() > 0)
 	{
 		UpdateCurrentPath(path);
@@ -571,7 +647,7 @@ PlannerHNS::ExtendedVehicleState MotionControl::DoOneStep(const double& dt, cons
 	else if(m_Path.size()>0 && behavior.state != INITIAL_STATE )
 	{
 
-		FindNextWayPoint(m_Path, currPose, vehicleState.speed, m_FollowMePoint, m_PerpendicularPoint, m_LateralError, m_FollowingDistance);
+		FindNextWayPoint(m_Path, currPose, vehicleState.speed, m_FollowMePoint, m_PerpendicularPoint, m_LateralError, m_FollowingDistance,waypoint_angle);
 
 		if(m_HyperParams.bEnableSteeringFF)
 		{
@@ -593,8 +669,10 @@ PlannerHNS::ExtendedVehicleState MotionControl::DoOneStep(const double& dt, cons
 			m_ffEstimatedVelocity = vehicleState.speed;
 		}
 
+		m_HyperParams.bEnableVelocityMode = true;
 		if(m_HyperParams.bEnableVelocityMode)
 		{
+			m_HyperParams.bUseInternalACC = true;
 			if(m_HyperParams.bUseInternalACC)
 			{
 				VelocityControllerUpdateUsingInternalOpenPlannerACC(dt, vehicleState, behavior, desiredState.speed, desiredState.shift);
@@ -640,7 +718,30 @@ PlannerHNS::ExtendedVehicleState MotionControl::DoOneStep(const double& dt, cons
 
 		if(m_HyperParams.bEnableSteeringMode)
 		{
-			SteerControllerUpdate(dt, m_ForwardSimulationPoint, m_FollowMePoint, vehicleState, behavior, m_LateralError, desiredState.steer);
+			// std::cout << "Steer controller is used !\n";
+			float angle_eerr;
+			
+			SteerControllerUpdate(dt, currPose, m_FollowMePoint, vehicleState, behavior, m_LateralError, desiredState.steer);
+
+			angle_error = m_LateralError;
+			// PlannerHNS::WayPoint my_point;
+			// my_point.pos.x = 0.0;
+			// my_point.pos.y = 0.0;
+			// my_point.pos.a = 0.20627283793741893;
+
+			// PlannerHNS::WayPoint follow_me;
+
+			// follow_me.pos.x = -0.5771932023643789;
+			// follow_me.pos.y = 1.5716032359392331;
+
+			// waypoint_angle = 0.34340416530199663;
+
+
+			// std::cout << "XY: " << currPose.pos.x << " " << currPose.pos.y << "\n";
+			// std::cout << "Angle: " << currPose.pos.a << "\n";
+			// std::cout << "Waypoint_angle: " << waypoint_angle << "\n";
+			
+			//StanleySteerController(currPose,desiredState.steer,m_FollowMePoint,vehicleState,waypoint_angle);
 		}
 		else
 		{
@@ -666,7 +767,7 @@ PlannerHNS::ExtendedVehicleState MotionControl::DoOneStep(const double& dt, cons
 	{
 		LogControlData(dt, behavior, currPose, vehicleState, desiredState);
 	}
-	std::cout << desiredState.steer << "\n";
+	// std::cout << desiredState.steer << " " << desiredState.speed << "\n";
 
 	desiredState.speed = 3.0;
 
@@ -691,7 +792,8 @@ PlannerHNS::VehicleState MotionControl::DoOneSimulationStep(const double& dt, co
 
 	if(m_Path.size() > 1)
 	{
-		FindNextWayPoint(m_Path, currPose, vehicleState.speed, m_FollowMePoint, m_PerpendicularPoint, m_LateralError, m_FollowingDistance);
+		//FindNextWayPoint(m_Path, currPose, vehicleState.speed, m_FollowMePoint, m_PerpendicularPoint, m_LateralError, m_FollowingDistance);
+
 
 		if(m_HyperParams.bEnableSteeringFF)
 		{
